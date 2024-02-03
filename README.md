@@ -1,3 +1,6 @@
+# WARNING: This is just for personal use. I have made a few modifications to make it fit for my use case.
+---
+
 Passwords
 ====================
 
