@@ -348,10 +348,12 @@ impl PasswordGenerator {
             target_mask |= 0b0000_0100;
         }
 
-        if let Some(s) = &self.symbols {
-            pool.push(s.as_slice());
-            sections_count += 1;
-            target_mask |= 0b0000_1000;
+        if self.symbols_enabled {
+            if let Some(s) = &self.symbols {
+                pool.push(s.as_slice());
+                sections_count += 1;
+                target_mask |= 0b0000_1000;
+            }
         }
 
         if self.spaces {
