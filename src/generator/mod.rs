@@ -1,3 +1,4 @@
+
 static NUMBERS: [char; 10] = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 static NUMBERS_EXCLUDE_SIMILAR: [char; 8] = ['2', '3', '4', '5', '6', '7', '8', '9'];
 
@@ -19,13 +20,8 @@ static UPPERCASE_LETTERS_EXCLUDE_SIMILAR: [char; 24] = [
     'V', 'W', 'X', 'Y', 'Z',
 ];
 
-static SYMBOLS: [char; 32] = [
-    '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=',
-    '>', '?', '@', '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~',
-];
-static SYMBOLS_EXCLUDE_SIMILAR: [char; 28] = [
-    '!', '#', '$', '%', '&', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?',
-    '@', '[', '\\', ']', '^', '_', '{', '}', '~',
+pub static SYMBOLS_DEFAULT: [char; 7] = [
+    '*', '(', ')', '&', '-', '+', '%'
 ];
 
 static SPACE: [char; 1] = [' '];
@@ -33,10 +29,11 @@ static SPACE: [char; 1] = [' '];
 /// This struct can help you continually generate passwords.
 #[derive(Debug, Clone, PartialEq)]
 pub struct PasswordGeneratorIter {
-    pool:        Vec<&'static [char]>,
+    pool:        Vec<Vec<char>>,
     length:      usize,
     target_mask: u8,
     strict:      bool,
+    symbols:     Vec<char>
 }
 
 impl PasswordGeneratorIter {
@@ -46,8 +43,9 @@ impl PasswordGeneratorIter {
 
         let mut result = Vec::with_capacity(count);
 
+        let pool_slices: Vec<&[char]> = self.pool.iter().map(|v| v.as_slice()).collect();
         let random =
-            random_pick::pick_multiple_from_multiple_slices(&self.pool, &[1], count * self.length);
+            random_pick::pick_multiple_from_multiple_slices(&pool_slices, &[1], count * self.length);
 
         if self.strict {
             let mut i = 0;
@@ -71,7 +69,7 @@ impl PasswordGeneratorIter {
                                 mask |= 0b0000_0010;
                             } else if UPPERCASE_LETTERS.contains(c) {
                                 mask |= 0b0000_0100;
-                            } else if SYMBOLS.contains(c) {
+                            } else if self.symbols.contains(c) {
                                 mask |= 0b0000_1000;
                             } else if ' '.eq(c) {
                                 mask |= 0b0001_0000;
@@ -88,7 +86,7 @@ impl PasswordGeneratorIter {
                 if !handle(&random, start, start + self.length, &mut password) {
                     loop {
                         let random = random_pick::pick_multiple_from_multiple_slices(
-                            &self.pool,
+                            &pool_slices,
                             &[1],
                             self.length,
                         );
@@ -182,8 +180,8 @@ pub struct PasswordGenerator {
     pub uppercase_letters:          bool,
     /// Passwords are allowed to, or must if the strict is true, contain a symbol or symbols.
     ///
-    /// Default: `false`
-    pub symbols:                    bool,
+    /// Default: `None`
+    pub symbols:                    Option<Vec<char>>,
     /// Passwords are allowed to, or must if the strict is true, contain a space or spaces.
     ///
     /// Default: `false`
@@ -219,7 +217,7 @@ impl PasswordGenerator {
             numbers:                    true,
             lowercase_letters:          true,
             uppercase_letters:          false,
-            symbols:                    false,
+            symbols:                    None,
             spaces:                     false,
             exclude_similar_characters: false,
             strict:                     false,
@@ -255,9 +253,8 @@ impl PasswordGenerator {
     }
 
     /// Passwords are allowed to, or must if the strict is true, contain a symbol or symbols.
-    pub const fn symbols(mut self, symbols: bool) -> PasswordGenerator {
-        self.symbols = symbols;
-
+    pub fn symbols(mut self, symbols: impl AsRef<str>) -> PasswordGenerator {
+        self.symbols = Some(symbols.as_ref().chars().collect());
         self
     }
 
@@ -348,13 +345,8 @@ impl PasswordGenerator {
             target_mask |= 0b0000_0100;
         }
 
-        if self.symbols {
-            if self.exclude_similar_characters {
-                pool.push(&SYMBOLS_EXCLUDE_SIMILAR);
-            } else {
-                pool.push(&SYMBOLS);
-            }
-
+        if let Some(s) = &self.symbols {
+            pool.push(s.as_slice());
             sections_count += 1;
             target_mask |= 0b0000_1000;
         }
@@ -369,7 +361,7 @@ impl PasswordGenerator {
         if !self.numbers
             && !self.lowercase_letters
             && !self.uppercase_letters
-            && !self.symbols
+            && self.symbols.is_none()
             && !self.spaces
         {
             Err("You need to enable at least one kind of characters.")
@@ -377,10 +369,11 @@ impl PasswordGenerator {
             Err("The length of passwords is too short.")
         } else {
             Ok(PasswordGeneratorIter {
-                pool,
+                pool: pool.iter().map(|s| s.to_vec()).collect(),
                 length: self.length,
                 target_mask,
                 strict: self.strict,
+                symbols: self.symbols.clone().unwrap_or(SYMBOLS_DEFAULT.to_vec())
             })
         }
     }

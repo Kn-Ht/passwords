@@ -2,6 +2,7 @@ use passwords::PasswordGenerator;
 use regex::Regex;
 
 const PASSWORD_COUNT: usize = 5000;
+const SYMBOLS: &str = r##"^[0-9a-zA-Z!"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~]{8}$"##;
 
 #[test]
 fn random() {
@@ -173,9 +174,9 @@ fn only_uppercase_letters_exclude_similar() {
 
 #[test]
 fn only_symbols() {
-    let pg = PasswordGenerator::new().lowercase_letters(false).numbers(false).symbols(true);
+    let pg = PasswordGenerator::new().lowercase_letters(false).numbers(false).symbols(SYMBOLS);
 
-    let re = Regex::new(r##"^[!"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~]{8}$"##).unwrap();
+    let re = Regex::new(SYMBOLS).unwrap();
 
     let results = pg.generate(PASSWORD_COUNT).unwrap();
 
@@ -189,7 +190,7 @@ fn only_symbols_exclude_similar() {
     let pg = PasswordGenerator::new()
         .lowercase_letters(false)
         .numbers(false)
-        .symbols(true)
+        .symbols("!@#$%^")
         .exclude_similar_characters(true);
 
     let re = Regex::new(r"^[!#$%&()*+,-./:;<=>?@\[\\\]^_{}~]{8}$").unwrap();
@@ -348,9 +349,9 @@ fn numbers_and_letters_exclude_similar() {
 #[test]
 fn numbers_letters_symbols() {
     {
-        let pg = PasswordGenerator::new().uppercase_letters(true).symbols(true);
+        let pg = PasswordGenerator::new().uppercase_letters(true).symbols(SYMBOLS);
 
-        let re = Regex::new(r##"^[0-9a-zA-Z!"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~]{8}$"##).unwrap();
+        let re = Regex::new(SYMBOLS).unwrap();
 
         let results = pg.generate(PASSWORD_COUNT).unwrap();
 
@@ -360,7 +361,7 @@ fn numbers_letters_symbols() {
     }
 
     {
-        let pg = PasswordGenerator::new().uppercase_letters(true).symbols(true).strict(true);
+        let pg = PasswordGenerator::new().uppercase_letters(true).symbols(SYMBOLS).strict(true);
 
         let re = Regex::new(r##"^[0-9a-zA-Z!"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~]{8}$"##).unwrap();
         let re_n = Regex::new(r"[0-9]+").unwrap();
@@ -385,7 +386,7 @@ fn numbers_letters_symbols_exclude_similar() {
     {
         let pg = PasswordGenerator::new()
             .uppercase_letters(true)
-            .symbols(true)
+            .symbols(SYMBOLS)
             .exclude_similar_characters(true);
 
         let re =
@@ -401,7 +402,7 @@ fn numbers_letters_symbols_exclude_similar() {
     {
         let pg = PasswordGenerator::new()
             .uppercase_letters(true)
-            .symbols(true)
+            .symbols(SYMBOLS)
             .strict(true)
             .exclude_similar_characters(true);
 
@@ -427,7 +428,7 @@ fn numbers_letters_symbols_exclude_similar() {
 #[test]
 fn visible_ascii() {
     {
-        let pg = PasswordGenerator::new().uppercase_letters(true).symbols(true).spaces(true);
+        let pg = PasswordGenerator::new().uppercase_letters(true).symbols(SYMBOLS).spaces(true);
 
         let re = Regex::new(r##"^[0-9a-zA-Z!"#$%&'()*+,-./:;<=>?@\[\\\]^_`{|}~ ]{8}$"##).unwrap();
 
@@ -441,7 +442,7 @@ fn visible_ascii() {
     {
         let pg = PasswordGenerator::new()
             .uppercase_letters(true)
-            .symbols(true)
+            .symbols(SYMBOLS)
             .spaces(true)
             .strict(true);
 
@@ -469,7 +470,7 @@ fn visible_ascii_exclude_similar() {
     {
         let pg = PasswordGenerator::new()
             .uppercase_letters(true)
-            .symbols(true)
+            .symbols(SYMBOLS)
             .spaces(true)
             .exclude_similar_characters(true);
 
@@ -486,7 +487,7 @@ fn visible_ascii_exclude_similar() {
     {
         let pg = PasswordGenerator::new()
             .uppercase_letters(true)
-            .symbols(true)
+            .symbols(SYMBOLS)
             .spaces(true)
             .strict(true)
             .exclude_similar_characters(true);
