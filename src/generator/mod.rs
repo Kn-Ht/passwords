@@ -182,6 +182,8 @@ pub struct PasswordGenerator {
     ///
     /// Default: `None`
     pub symbols:                    Option<Vec<char>>,
+    /// For ease of use to use with egui
+    pub symbols_enabled:            bool,
     /// Passwords are allowed to, or must if the strict is true, contain a space or spaces.
     ///
     /// Default: `false`
@@ -218,6 +220,7 @@ impl PasswordGenerator {
             lowercase_letters:          true,
             uppercase_letters:          false,
             symbols:                    None,
+            symbols_enabled:            false,
             spaces:                     false,
             exclude_similar_characters: false,
             strict:                     false,
